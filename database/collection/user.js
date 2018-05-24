@@ -1,8 +1,11 @@
 const mongoose = require("../connect");
+const Schema = require("mongoose").Schema;
 var userSchema = {
-  name : String,
+  nombre: String,
   email: String,
-  contraseña: String
+  mensaje : String
+  //mensaje : [{type : Schema.ObjectId,ref : "mensaje"}],
+
 };
 var user = mongoose.model("user", userSchema);
 module.exports = user;
