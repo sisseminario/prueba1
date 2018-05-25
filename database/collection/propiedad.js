@@ -4,11 +4,10 @@ var propiedadSchema = {
   estado: String,
   precio: Number,
   descripcion: String,
-  fecha_entrega: String,
+  fecha_entrega: { type: Date, default: Date.now },
   supterreno: String,
   amurallado: Boolean,
-  /*servicios_basicos: String,
-
+  servicios_basicos: String,
   anio_construccion: Date,
   deshabitacion: String,
   descripcion_banio: String,
@@ -24,9 +23,9 @@ var propiedadSchema = {
   numparqueos: Number,
   amoblado: Boolean,
   fecha_publicacion: Date,
-  latitud: Number,
-  longitud: Number,
-  rating: Number//mensaje : [{type : Schema.ObjectId,ref : "mensaje"}],*/
+  ubicacion: String,
+  dieccion: String,
+  rating: Number
 
 };
 var propiedad= mongoose.model("propiedad",propiedadSchema );
