@@ -1,9 +1,7 @@
-
 var express = require('express');
 var router = express.Router();
 var User = require("../../../database/collection/user");
 var Propiedad = require("../../../database/collection/propiedad");
-///var Mensaje = require("../../../database/collection/mensaje");
 ////crear usuario
 router.post("/user", (req, res) => {
 
@@ -29,7 +27,7 @@ router.post("/user", (req, res) => {
   });
 });
 
-///leer usuario
+///leer usuariosr
 router.get("/user", (req, res, next) => {
   User.find({}).exec( (error, docs) => {
     res.status(200).json(docs);
@@ -67,13 +65,13 @@ router.post("/propiedad", (req, res) => {
     });
     return;
   }
-  var user = {
+  var propiedad = {
     estado: req.body.estado,
     precio: req.body.precio,
     descripcion: req.body.descripcion,
     fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
-    servicios_basicos: req.body.servicios_basicos,
+    /*servicios_basicos: req.body.servicios_basicos,
     amurallado: req.body.amurallado,
     anio_construccion: req.body.anio_construccion,
     deshabitacion: req.body.deshabitacion,
@@ -92,12 +90,9 @@ router.post("/propiedad", (req, res) => {
     fecha_publicacion: req.body.fecha_publicacion,
     latitud:req.body.latitud,
     longitud: req.body.longitud,
-    rating: req.body.rating
-
-
+    rating: req.body.rating*/
   };
-  var propiedadData=new Propiedad(propiedad);
-
+  var propiedadData =new Propiedad(propiedad);
   propiedadData.save().then( () => {
     //content-type
     res.status(200).json({
