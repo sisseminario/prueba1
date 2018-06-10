@@ -7,7 +7,8 @@ var vendedorSchema = {
   telefono_ref: Number,
   celular: Number,
   email: String,
-  ciudad : String
+  ciudad : String,
+  password : String
   //mensaje : [{type : Schema.ObjectId,ref : "mensaje"}],
 
 };

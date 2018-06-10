@@ -7,5 +7,5 @@ var ciudadSchema = {
 
 
 };
-var  ciudad = mongoose.model(" ciudad",  ciudadSchema);
+var  ciudad = mongoose.model("ciudad",  ciudadSchema);
 module.exports =  ciudad;
