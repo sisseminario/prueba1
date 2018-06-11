@@ -10,6 +10,8 @@ var Precio = require("../../../database/collection/precio");
 var Zona = require("../../../database/collection/zona");
 var Tipo = require("../../../database/collection/tipo");
 var Oferta = require("../../../database/collection/oferta");
+var Administrador = require("../../../database/collection/administrador");
+//var app = express();
 
 var Img = require("../../../database/collection/img");
 
@@ -160,6 +162,116 @@ router.put(/user\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
+///////////////////////////////administrador////////////////////////
+
+////crear administrador
+router.post("/administrador", (req, res) => {
+
+  if (req.body.nombre == "" && req.body.email == "") {
+    res.status(400).json({
+      "msn" : "formato incorrecto"
+    });
+    return;
+  }
+  var administrador = {
+    nombre : req.body.nombre,
+    email: req.body.email,
+    password: req.body.password
+
+  };
+  var administradorData = new Administrador(administrador);
+
+  administradorData.save().then( () => {
+    //content-type
+    res.status(200).json({
+      "msn" : "administrador Registrado con exito "
+    });
+  });
+});
+
+///leer administrador
+router.get("/user", (req, res, next) => {
+  Administrador.find({}).exec( (error, docs) => {
+    res.status(200).json(docs);
+  })
+});
+//leer uno por uno los administradores
+router.get(/administrador\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Administrador.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
+    }
+
+    res.status(200).json({
+      "msn" : "No existe el recurso "
+    });
+  })
+});
+//eliminar administradores
+router.delete(/administrador\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Administrador.find({_id : id}).remove().exec( (err, docs) => {
+      res.status(200).json(docs);
+  });
+});
+
+////PACH actualizacion solo de alguno de los datos del usuario
+
+router.patch(/administrador\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys = Object.keys(req.body);
+  var administrador = {};
+  for (var i = 0; i < keys.length; i++){
+    administrador[keys[i]] = req.body[keys[i]];
+  }
+  console.log(administrador);
+  Administrador.findOneAndUpdate({_id: id}, administrador, (err, params) => {
+    if (err) {
+      res.status(500).json({
+        "msn": "Error mo se pudo actualizar los datos"
+      });
+      return;
+    }
+    res.status(200).json(params);
+    return;
+  });
+});
+
+
+/// implementacion del Metodo PUT para actualizar
+router.put(/administrador\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys = Object.keys(req.body);
+  var oficialkes = ['nombre', 'email', 'password'];
+  var result = _.difference(oficialkes, keys);
+  if (result.length > 0){
+    res.status(400).json({
+      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
+    });
+    return;
+  }
+  var administrador = {
+    nombre : req.body.nombre,
+    email: req.body.email,
+    password: req.body.password
+  };
+  Administrador.findOneAndUpdate({_id: id}, administrador, (err, params) => {
+    if (err) {
+      res.status(500).json({
+        "msn": "Error mo se pudo actualizar los datos"
+      });
+      return;
+    }
+    res.status(200).json(params);
+    return;
+  });
+});
 
 
 //////////////////////////propiedad/////////////////////////////////
@@ -174,7 +286,7 @@ router.post("/propiedad", (req, res) => {
   }
   var propiedad = {
     estado: req.body.estado,
-    precio: req.body.precio,
+  //  precio: req.body.precio,
     descripcion: req.body.descripcion,
     fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
@@ -198,6 +310,7 @@ router.post("/propiedad", (req, res) => {
     direccion: req.body.direccion,
     ubicacion:req.body.ubicacion,
     rating: req.body.rating
+
   };
   var propiedadData =new Propiedad(propiedad);
   propiedadData.save().then( () => {
@@ -266,7 +379,7 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
   var keys = Object.keys(req.body);
-  var oficialkes = ['estado', 'precio', 'descripcion', 'fecha_entrega', 'supterreno', 'amurallado',
+  var oficialkes = ['estado', 'descripcion', 'fecha_entrega', 'supterreno', 'amurallado',
    'servicios_basicos', 'anio_construccion', 'deshabitacion', 'descripcion_banio', 'numero_banios',
    'numero_habitacines', 'supconstruida', 'supterraza', 'pisos', 'elevador', 'baulera', 'piscina',
     'garaje', 'numparqueos', 'amoblado', 'fecha_publicacion', 'direccion', 'ubicacion', 'rating'];
@@ -279,7 +392,7 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   }
   var propiedad = {
     estado: req.body.estado,
-    precio: req.body.precio,
+    //precio: req.body.precio,
     descripcion: req.body.descripcion,
     fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
@@ -434,7 +547,7 @@ router.put(/vendedor\/[a-z0-9]{1,}$/, (req, res) => {
     return;
   });
 });
-*/
+
 /////////////////////////////////ciudad///////////////////////////////////////
 //insertar
 router.post("/ciudad", (req, res) => {
@@ -920,7 +1033,7 @@ router.delete(/oferta\/[a-z0-9]{1,}$/, (req, res) => {
 
 
 ////PACH actualizacion solo de alguno de los datos de las ofertas
-router.patch(/user\/[a-z0-9]{1,}$/, (req, res) => {
+router.patch(/oferta\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
   var keys = Object.keys(req.body);
@@ -954,11 +1067,11 @@ router.put(/oferta\/[a-z0-9]{1,}$/, (req, res) => {
       "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
     });
     return;
-
+  }
   var oferta = {
     tipo_oferta: req.body.tipo_oferta
   };
- Oferta.findOneAndUpdate({_id: id}, oferta, (err, params) => {
+  Oferta.findOneAndUpdate({_id: id}, oferta, (err, params) => {
     if (err) {
       res.status(500).json({
         "msn": "Error mo se pudo actualizar los datos"
@@ -969,12 +1082,8 @@ router.put(/oferta\/[a-z0-9]{1,}$/, (req, res) => {
     return;
   });
 });
-
-
 /* GET home page. */
 router.get('/', function(req, res) {
-  res.render('index', { title: 'Express' });
+  res.render('index', { title: 'Express' })
 });
-
-
 module.exports = router;

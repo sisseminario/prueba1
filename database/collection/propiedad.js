@@ -2,7 +2,7 @@ const mongoose = require("../connect");
 const Schema = require("mongoose").Schema;
 var propiedadSchema = {
   estado: String,
-  precio: Number,
+//  precio: Number,
   descripcion: String,
   fecha_entrega: { type: Date, default: Date.now },
   supterreno: String,
