@@ -1,5 +1,6 @@
 const mongoose = require("../connect");
 const Schema = require("mongoose").Schema;
+//var Dueño = mongoose.model('Dueño');
 var propiedadSchema = {
   estado: String,
 //  precio: Number,
@@ -26,7 +27,7 @@ var propiedadSchema = {
   ubicacion: String,
   dieccion: String,
   rating: Number
-
+  //dueño : { type: Schema.ObjectId, ref: "dueño" }
 };
 var propiedad= mongoose.model("propiedad",propiedadSchema );
 module.exports = propiedad;

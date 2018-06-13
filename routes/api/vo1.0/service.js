@@ -11,6 +11,7 @@ var Zona = require("../../../database/collection/zona");
 var Tipo = require("../../../database/collection/tipo");
 var Oferta = require("../../../database/collection/oferta");
 var Administrador = require("../../../database/collection/administrador");
+var Dueño = require("../../../database/collection/dueño");
 //var app = express();
 
 var Img = require("../../../database/collection/img");
@@ -161,6 +162,118 @@ router.put(/user\/[a-z0-9]{1,}$/, (req, res) => {
     return;
   });
 });
+
+////////////////////////////////////Dueño//////////////////////////////
+router.post("/dueño", (req, res) => {
+
+  if (req.body.nombre == "" && req.body.email == "") {
+    res.status(400).json({
+      "msn" : "formato incorrecto"
+    });
+    return;
+  }
+  var dueño = {
+    nombre : req.body.nombre,
+    email: req.body.email,
+    telefono: req.body.telefono,
+    celular: req.body.celular
+
+  };
+  var dueñoData = new Dueño(dueño);
+
+  dueñoData.save().then( () => {
+    //content-type
+    res.status(200).json({
+      "msn" : "dueño Registrado con exito "
+    });
+  });
+});
+
+///leer usuariosr
+router.get("/dueño", (req, res, next) => {
+  Dueño.find({}).exec( (error, docs) => {
+    res.status(200).json(docs);
+  })
+});
+//leer uno por uno los usuarios
+router.get(/dueño\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Dueño.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
+    }
+
+    res.status(200).json({
+      "msn" : "No existe el recurso "
+    });
+  })
+});
+//eliminar usuarios
+router.delete(/dueño\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Dueño.find({_id : id}).remove().exec( (err, docs) => {
+      res.status(200).json(docs);
+  });
+});
+
+////PACH actualizacion solo de alguno de los datos del usuario
+
+router.patch(/dueño\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys = Object.keys(req.body);
+  var dueño = {};
+  for (var i = 0; i < keys.length; i++){
+    dueño[keys[i]] = req.body[keys[i]];
+  }
+  console.log(dueño);
+  Dueño.findOneAndUpdate({_id: id}, dueño, (err, params) => {
+    if (err) {
+      res.status(500).json({
+        "msn": "Error mo se pudo actualizar los datos"
+      });
+      return;
+    }
+    res.status(200).json(params);
+    return;
+  });
+});
+
+
+/// implementacion del Metodo PUT para actualizar
+router.put(/dueño\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys = Object.keys(req.body);
+  var oficialkes = ['nombre', 'email', 'telefono', 'celular'];
+  var result = _.difference(oficialkes, keys);
+  if (result.length > 0){
+    res.status(400).json({
+      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
+    });
+    return;
+  }
+  var dueño = {
+    nombre : req.body.nombre,
+    email: req.body.email,
+    telefono: req.body.telefono,
+    celular: req.body.celular
+  };
+  Dueño.findOneAndUpdate({_id: id}, dueño, (err, params) => {
+    if (err) {
+      res.status(500).json({
+        "msn": "Error mo se pudo actualizar los datos"
+      });
+      return;
+    }
+    res.status(200).json(params);
+    return;
+  });
+});
+
 
 ///////////////////////////////administrador////////////////////////
 
@@ -326,7 +439,14 @@ router.get("/propiedad", (req, res, next) => {
     res.status(200).json(docs);
   })
 });
-
+/*router.get("/propiedad", (req, res, next) => {
+  Propiedad.find({}).exec( (error, propiedades) => {
+    Dueño.populate(propiedades, {path: "dueño"},function(err, propiedades){
+        res.status(200).send(propiedades);
+      });
+  })
+});
+*/
 //leer uno por uno las propiedades
 router.get(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
