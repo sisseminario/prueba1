@@ -4,17 +4,10 @@ var router = express.Router();
 var _ = require("underscore");
 var User = require("../../../database/collection/user");
 var Propiedad = require("../../../database/collection/propiedad");
-var Vendedor = require("../../../database/collection/vendedor");
-var Ciudad = require("../../../database/collection/ciudad");
-var Precio = require("../../../database/collection/precio");
-var Zona = require("../../../database/collection/zona");
-var Tipo = require("../../../database/collection/tipo");
-var Oferta = require("../../../database/collection/oferta");
-var Administrador = require("../../../database/collection/administrador");
-var Dueño = require("../../../database/collection/dueño");
-//var app = express();
 
 var Img = require("../../../database/collection/img");
+
+var jwt = require("jsonwebtoken");
 
 var storage = multer.diskStorage({
   destination: "./public/avatars",
@@ -27,7 +20,72 @@ var storage = multer.diskStorage({
 var upload = multer({
   storage: storage
 }).single("img");;
+/*router.post("/login", (req, res, next) => {
+  var agentename = req.body.agentename;
+  var password = req.body.password;
+  var result = Usuario.findOne({nombre_agente: agentename, password_agente: password}).exec((err, doc) => {
+    if (err) {
+      res.status(200).json({
+        msn : "No se puede completar con la peticion"
+      });
+      return;
+    }
+    if (doc) {
+      //res.status(200).json(doc);
+      jwt.sign({nombre_agente: doc.nombre_agente, password_agente: doc.password_agente}, "secretkey123", (err, token) => {
+        console.log(err);
+        res.status(200).json({
+         token : token
+        });
+      })
+    } else {
+      res.status(200).json({
+        msn : "El agente no existe en la base de satos"
+      });
+    }
+  });
+});
 
+/////////////creacion de una nueva ruta/ de tipo post///Login PARA EL ADMONISTRADOR ///////////
+router.post("/login1", (req, res, next) => {
+  var adminname = req.body.adminname;
+  var password = req.body.password;
+  var result = Administrador.findOne({nombre: adminname, password: password}).exec((err, doc) => {
+    if (err) {
+      res.status(200).json({
+        msn : "No se puede completar con la peticion"
+      });
+      return;
+    }
+    if (doc) {
+      //res.status(200).json(doc);
+      jwt.sign({nombre: doc.nombre, password: doc.password}, "secretkey123", (err, token) => {
+        console.log(err);
+        res.status(200).json({
+         token : token
+        });
+      })
+    } else {
+      res.status(200).json({
+        msn : "El administrador no existe no existe en la base de satos"
+      });
+    }
+  });
+});
+
+//Middleware
+function verifytoken (req, res, next) {
+  //recuperacion del header
+  const header = req.headers["authorization"];
+  if (header == undefined ) {
+    res.status(403).json({
+      msn: "No autorizado"
+    })
+  } else {
+    req.token = header.split(" ")[1]
+    next();
+  }
+}*/
 //////crear userimg
 router.post("/userimg", (req, res) => {
   upload(req, res, (err) => {
@@ -163,230 +221,6 @@ router.put(/user\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
-////////////////////////////////////Dueño//////////////////////////////
-router.post("/dueño", (req, res) => {
-
-  if (req.body.nombre == "" && req.body.email == "") {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var dueño = {
-    nombre : req.body.nombre,
-    email: req.body.email,
-    telefono: req.body.telefono,
-    celular: req.body.celular
-
-  };
-  var dueñoData = new Dueño(dueño);
-
-  dueñoData.save().then( () => {
-    //content-type
-    res.status(200).json({
-      "msn" : "dueño Registrado con exito "
-    });
-  });
-});
-
-///leer usuariosr
-router.get("/dueño", (req, res, next) => {
-  Dueño.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  })
-});
-//leer uno por uno los usuarios
-router.get(/dueño\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Dueño.findOne({_id : id}).exec( (error, docs) => {
-    if (docs != null) {
-        res.status(200).json(docs);
-        return;
-    }
-
-    res.status(200).json({
-      "msn" : "No existe el recurso "
-    });
-  })
-});
-//eliminar usuarios
-router.delete(/dueño\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Dueño.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-////PACH actualizacion solo de alguno de los datos del usuario
-
-router.patch(/dueño\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var dueño = {};
-  for (var i = 0; i < keys.length; i++){
-    dueño[keys[i]] = req.body[keys[i]];
-  }
-  console.log(dueño);
-  Dueño.findOneAndUpdate({_id: id}, dueño, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-/// implementacion del Metodo PUT para actualizar
-router.put(/dueño\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oficialkes = ['nombre', 'email', 'telefono', 'celular'];
-  var result = _.difference(oficialkes, keys);
-  if (result.length > 0){
-    res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
-    });
-    return;
-  }
-  var dueño = {
-    nombre : req.body.nombre,
-    email: req.body.email,
-    telefono: req.body.telefono,
-    celular: req.body.celular
-  };
-  Dueño.findOneAndUpdate({_id: id}, dueño, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-///////////////////////////////administrador////////////////////////
-
-////crear administrador
-router.post("/administrador", (req, res) => {
-
-  if (req.body.nombre == "" && req.body.email == "") {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var administrador = {
-    nombre : req.body.nombre,
-    email: req.body.email,
-    password: req.body.password
-
-  };
-  var administradorData = new Administrador(administrador);
-
-  administradorData.save().then( () => {
-    //content-type
-    res.status(200).json({
-      "msn" : "administrador Registrado con exito "
-    });
-  });
-});
-
-///leer administrador
-router.get("/user", (req, res, next) => {
-  Administrador.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  })
-});
-//leer uno por uno los administradores
-router.get(/administrador\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Administrador.findOne({_id : id}).exec( (error, docs) => {
-    if (docs != null) {
-        res.status(200).json(docs);
-        return;
-    }
-
-    res.status(200).json({
-      "msn" : "No existe el recurso "
-    });
-  })
-});
-//eliminar administradores
-router.delete(/administrador\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Administrador.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-////PACH actualizacion solo de alguno de los datos del usuario
-
-router.patch(/administrador\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var administrador = {};
-  for (var i = 0; i < keys.length; i++){
-    administrador[keys[i]] = req.body[keys[i]];
-  }
-  console.log(administrador);
-  Administrador.findOneAndUpdate({_id: id}, administrador, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-/// implementacion del Metodo PUT para actualizar
-router.put(/administrador\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oficialkes = ['nombre', 'email', 'password'];
-  var result = _.difference(oficialkes, keys);
-  if (result.length > 0){
-    res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
-    });
-    return;
-  }
-  var administrador = {
-    nombre : req.body.nombre,
-    email: req.body.email,
-    password: req.body.password
-  };
-  Administrador.findOneAndUpdate({_id: id}, administrador, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
 //////////////////////////propiedad/////////////////////////////////
 //insertar
 router.post("/propiedad", (req, res) => {
@@ -399,7 +233,6 @@ router.post("/propiedad", (req, res) => {
   }
   var propiedad = {
     estado: req.body.estado,
-  //  precio: req.body.precio,
     descripcion: req.body.descripcion,
     fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
@@ -422,7 +255,23 @@ router.post("/propiedad", (req, res) => {
     fecha_publicacion: req.body.fecha_publicacion,
     direccion: req.body.direccion,
     ubicacion:req.body.ubicacion,
-    rating: req.body.rating
+    rating: req.body.rating,
+    precio: req.body.precio,
+    moneda: req.body.moneda,
+    tipo_oferta: req.body.tipo_oferta,
+    tipo_vivienda: req.body.tipo_vivienda,
+    nombre_zona: req.body.nombre_zona,
+    nombre_ciudad: req.body.nombre_ciudad,
+    latitud: req.body.latitud,
+    longitud: req.body.longitud,
+    nombre_dueno: req.body.nombre_dueno,
+    apellido_dueno: req.body.apellido_dueno,
+    telefono_dueno: req.body.telefono_dueno,
+    telefono_ref_dueno: req.body.telefono_ref_dueno,
+    celular_dueno: req.body.celular_dueno,
+    email_dueno: req.body.email_dueno,
+    ciudad_dueno: req.body.ciudad_dueno
+
 
   };
   var propiedadData =new Propiedad(propiedad);
@@ -439,9 +288,10 @@ router.get("/propiedad", (req, res, next) => {
     res.status(200).json(docs);
   })
 });
-/*router.get("/propiedad", (req, res, next) => {
+/*
+router.get("/propiedad", (req, res, next) => {
   Propiedad.find({}).exec( (error, propiedades) => {
-    Dueño.populate(propiedades, {path: "dueño"},function(err, propiedades){
+    Dueno.populate(propiedades, {path: "Dueno"},function(err, propiedades){
         res.status(200).send(propiedades);
       });
   })
@@ -502,7 +352,9 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   var oficialkes = ['estado', 'descripcion', 'fecha_entrega', 'supterreno', 'amurallado',
    'servicios_basicos', 'anio_construccion', 'deshabitacion', 'descripcion_banio', 'numero_banios',
    'numero_habitacines', 'supconstruida', 'supterraza', 'pisos', 'elevador', 'baulera', 'piscina',
-    'garaje', 'numparqueos', 'amoblado', 'fecha_publicacion', 'direccion', 'ubicacion', 'rating'];
+    'garaje', 'numparqueos', 'amoblado', 'fecha_publicacion', 'direccion', 'ubicacion', 'rating',
+  'precio', 'moneda', 'tipo_oferta', 'tipo_vivienda', 'nombre_zona', 'nombre_ciudad', 'latitud', 'longitud',
+'nombre_dueno', 'apellido_dueno', 'telefono_dueno', 'telefono_ref_dueno', 'celular_dueno', 'email_dueno', 'ciudad_dueno'];
   var result = _.difference(oficialkes, keys);
   if (result.length > 0){
     res.status(400).json({
@@ -512,7 +364,6 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   }
   var propiedad = {
     estado: req.body.estado,
-    //precio: req.body.precio,
     descripcion: req.body.descripcion,
     fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
@@ -535,7 +386,22 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
     fecha_publicacion: req.body.fecha_publicacion,
     direccion: req.body.direccion,
     ubicacion:req.body.ubicacion,
-    rating: req.body.rating
+    rating: req.body.rating,
+    precio: req.body.precio,
+    moneda: req.body.moneda,
+    tipo_oferta: req.body.tipo_oferta,
+    tipo_vivienda: req.body.tipo_vivienda,
+    nombre_zona: req.body.nombre_zona,
+    nombre_ciudad: req.body.nombre_ciudad,
+    latitud: req.body.latitud,
+    longitud: req.body.longitud,
+    nombre_dueno: req.body.nombre_dueno,
+    apellido_dueno: req.body.apellido_dueno,
+    telefono_dueno: req.body.telefono_dueno,
+    telefono_ref_dueno: req.body.telefono_ref_dueno,
+    celular_dueno: req.body.celular_dueno,
+    email_dueno: req.body.email_dueno,
+    ciudad_dueno: req.body.ciudad_dueno
   };
   Propiedad.findOneAndUpdate({_id: id}, propiedad, (err, params) => {
     if (err) {
@@ -549,659 +415,6 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
-///////////////////////////////////vendedor/////////////////////////////////////////////////
-//insertar
-router.post("/vendedor", (req, res) => {
-
-  if (req.body.nombre == "" && req.body.apellido== "") {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var vendedor = {
-    nombre : req.body.nombre,
-    apellido: req.body.apellido,
-    telefono: req.body.telefono,
-    telefono_ref: req.body.telefono_ref,
-    celular: req.body.celular,
-    email: req.body.email,
-    ciudad : req.body.ciudad,
-    password : req.body.ciudad
-
-  };
-  var vendedorData = new Vendedor(vendedor);
-
-  vendedorData.save().then( () => {
-    //content-type
-    res.status(200).json({
-      "msn" : "vendedor Registrado con exito "
-    });
-  });
-});
-//leer Vendedor
-router.get("/vendedor", (req, res, next) => {
-  Vendedor.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  })
-});
-
-//leer uno por uno los vendedores
-router.get(/vendedor\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Vendedor.findOne({_id : id}).exec( (error, docs) => {
-    if (docs != null) {
-        res.status(200).json(docs);
-        return;
-    }
-
-    res.status(200).json({
-      "msn" : "No existe el recurso "
-    });
-  })
-});
-//eliminar vendedores
-router.delete(/vendedor\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Vendedor.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-////PACH actualizacion solo de alguno de los datos de los vendedores
-router.patch(/vendedor\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var vendedor = {};
-  console.log(vendedor);
-  for (var i = 0; i < keys.length; i++){
-    vendedor[keys[i]] = req.body[keys[i]];
-  }
-  Vendedor.findOneAndUpdate({_id: id}, vendedor, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-/// implementacion del Metodo PUT para actualizar los vendedores
-router.put(/vendedor\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oficialkes = ['nombre', 'apellido', 'telefono', 'telefono_ref', 'celular', 'email', 'Ciudad', 'password'];
-  var result = _.difference(oficialkes, keys);
-  if (result.length > 0){
-    res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
-    });
-    return;
-  }
-  var vendedor = {
-    nombre : req.body.nombre,
-    apellido: req.body.apellido,
-    telefono: req.body.telefono,
-    telefono_ref: req.body.telefono_ref,
-    celular: req.body.celular,
-    email: req.body.email,
-    ciudad : req.body.ciudad,
-    password : req.body.ciudad
-  };
-  Vendedor.findOneAndUpdate({_id: id}, vendedor, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-/////////////////////////////////ciudad///////////////////////////////////////
-//insertar
-router.post("/ciudad", (req, res) => {
-
-  if (req.body.nombre_ciudad == "" ) {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var ciudad = {
-    nombre_ciudad: req.body.nombre_ciudad,
-    latitud: req.body.latitud,
-    longitud: req.body.longitud
-
-  };
-  var ciudadData = new Ciudad(ciudad);
-
-  ciudadData.save().then( () => {
-    //content-type
-    res.status(200).json({
-      "msn" : "ciudad Registrado con exito "
-    });
-  });
-});
-//leer ciudad
-router.get("/ciudad", (req, res, next) => {
-  Ciudad.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  })
-});
-
-//leer uno por uno los ciudades
-router.get(/ciudad\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-Ciudad.findOne({_id : id}).exec( (error, docs) => {
-    if (docs != null) {
-        res.status(200).json(docs);
-        return;
-    }
-
-    res.status(200).json({
-      "msn" : "No existe el recurso "
-    });
-  })
-});
-//eliminar ciudades
-router.delete(/ciudad\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Ciudad.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-////PACH actualizacion solo de alguno de los datos de las ciudades
-router.patch(/ciudad\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var ciudad = {};
-  console.log(ciudad);
-  for (var i = 0; i < keys.length; i++){
-    ciudad[keys[i]] = req.body[keys[i]];
-  }
-  Ciudad.findOneAndUpdate({_id: id}, ciudad, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-/// implementacion del Metodo PUT para actualizar las ciudades
-router.put(/ciudad\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oficialkes = ['nombre_ciudad', 'latitud', 'longitud'];
-  var result = _.difference(oficialkes, keys);
-  if (result.length > 0){
-    res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
-    });
-    return;
-  }
-  var ciudad = {
-    nombre_ciudad: req.body.nombre_ciudad,
-    latitud: req.body.latitud,
-    longitud: req.body.longitud
-  };
-  Ciudad.findOneAndUpdate({_id: id}, ciudad, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-///////////////////////////////precio/////////////////////////////////////
-router.post("/precio", (req, res) => {
-
-  if (req.body.precio == "" ) {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var precio = {
-    precio: req.body.precio,
-    presiolso: req.body.presiolso,
-    moneda: req.body.moneda,
-    monedalso: req.body.monedalso
-
-  };
-  var precioData = new Precio(precio);
-
-  precioData.save().then( () => {
-    //content-type
-    res.status(200).json({
-      "msn" : "precio Registrado con exito "
-    });
-  });
-});
-
-///leer
-router.get("/precio", (req, res, next) => {
- Precio.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  })
-});
-
-//leer uno por uno los precio
-router.get(/precio\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-Precio.findOne({_id : id}).exec( (error, docs) => {
-    if (docs != null) {
-        res.status(200).json(docs);
-        return;
-    }
-
-    res.status(200).json({
-      "msn" : "No existe el recurso "
-    });
-  })
-});
-//eliminar presio
-router.delete(/precio\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Precio.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-
-////PACH actualizacion solo de alguno de los datos de los presios
-router.patch(/precio\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var precio = {};
-  console.log(precio);
-  for (var i = 0; i < keys.length; i++){
-    precio[keys[i]] = req.body[keys[i]];
-  }
-  Precio.findOneAndUpdate({_id: id}, precio, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-/// implementacion del Metodo PUT para actualizar los precios
-router.put(/precio\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oficialkes = ['precio', 'preciolso', 'moneda', 'monedalso'];
-  var result = _.difference(oficialkes, keys);
-  if (result.length > 0){
-    res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
-    });
-    return;
-  }
-  var precio = {
-    precio: req.body.precio,
-    presiolso: req.body.presiolso,
-    moneda: req.body.moneda,
-    monedalso: req.body.monedalso
-  };
-  Precio.findOneAndUpdate({_id: id}, precio, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-/////////////////////////////////////zona///////////////////////////////////
-router.post("/zona", (req, res) => {
-
-  if (req.body.nombre_zona == "" ) {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var zona = {
-    nombre_zona: req.body.nombre_zona
-
-  };
-  var zonaData = new Zona(zona);
-
-  zonaData.save().then( () => {
-    //content-type
-    res.status(200).json({
-      "msn" : "zona Registrado con exito "
-    });
-  });
-});
-
-///leer zona
-router.get("/zona", (req, res, next) => {
-  Zona.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  })
-});
-
-//leer uno por uno las zonas
-router.get(/zona\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Zona.findOne({_id : id}).exec( (error, docs) => {
-    if (docs != null) {
-        res.status(200).json(docs);
-        return;
-    }
-
-    res.status(200).json({
-      "msn" : "No existe el recurso "
-    });
-  })
-});
-//eliminar zonas
-router.delete(/zona\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Zona.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-////PACH actualizacion solo de alguno de los datos de la zona
-router.patch(/zona\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var zona = {};
-  console.log(zona);
-  for (var i = 0; i < keys.length; i++){
-    zona[keys[i]] = req.body[keys[i]];
-  }
-  User.findOneAndUpdate({_id: id}, zona, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-/// implementacion del Metodo PUT para actualizar las zonas
-router.put(/zona\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oficialkes = ['nombre_zona'];
-  var result = _.difference(oficialkes, keys);
-  if (result.length > 0){
-    res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
-    });
-    return;
-  }
-  var zona = {
-  nombre_zona: req.body.nombre_zona
-  };
-  Zona.findOneAndUpdate({_id: id}, zona, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-/////////////////////////////////////tipo////////////////////////
-router.post("/tipo", (req, res) => {
-
-  if (req.body.tipo_vivienda == "" ) {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var tipo = {
-    tipo_vivienda: req.body.tipo_vivienda
-
-  };
-  var tipoData = new Tipo(tipo);
-
-  tipoData.save().then( () => {
-    //content-type
-    res.status(200).json({
-      "msn" : "tipo Registrado con exito "
-    });
-  });
-});
-
-///leer tipo
-router.get("/tipo", (req, res, next) => {
-  Tipo.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  })
-});
-
-//leer uno por uno los tipos
-router.get(/tipo\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Tipo.findOne({_id : id}).exec( (error, docs) => {
-    if (docs != null) {
-        res.status(200).json(docs);
-        return;
-    }
-
-    res.status(200).json({
-      "msn" : "No existe el recurso "
-    });
-  })
-});
-//eliminar tipos
-router.delete(/tipo\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Tipo.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-////PACH actualizacion solo de alguno de los datos del tipo
-router.patch(/tipo\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var tipo = {};
-  console.log(tipo);
-  for (var i = 0; i < keys.length; i++){
-    tipo[keys[i]] = req.body[keys[i]];
-  }
-  Tipo.findOneAndUpdate({_id: id}, tipo, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-/// implementacion del Metodo PUT para actualizar los tipos
-router.put(/tipo\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oficialkes = ['tipo_vivienda'];
-  var result = _.difference(oficialkes, keys);
-  if (result.length > 0){
-    res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
-    });
-    return;
-  }
-  var tipo = {
-  tipo_vivienda: req.body.tipo_vivienda
-  };
-  Tipo.findOneAndUpdate({_id: id}, tipo, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-//////////////////////////////////oferta///////////////
-router.post("/oferta", (req, res) => {
-
-  if (req.body.tipo_vivienda == "" ) {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var oferta = {
-    tipo_oferta: req.body.tipo_oferta
-  };
-  var ofertaData = new Oferta(oferta);
-
-  ofertaData.save().then( () => {
-    //content-type
-    res.status(200).json({
-      "msn" : "oferta Registrado con exito "
-    });
-  });
-});
-
-///leer
-router.get("/oferta", (req, res, next) => {
-  Oferta.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  })
-});
-//leer uno por uno las ofertas
-router.get(/oferta\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Oferta.findOne({_id : id}).exec( (error, docs) => {
-    if (docs != null) {
-        res.status(200).json(docs);
-        return;
-    }
-
-    res.status(200).json({
-      "msn" : "No existe el recurso "
-    });
-  })
-});
-//eliminar ofertas
-router.delete(/oferta\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Oferta.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-
-////PACH actualizacion solo de alguno de los datos de las ofertas
-router.patch(/oferta\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oferta = {};
-  console.log(oferta);
-  for (var i = 0; i < keys.length; i++){
-    oferta[keys[i]] = req.body[keys[i]];
-  }
-Oferta.findOneAndUpdate({_id: id}, oferta, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
-
-
-/// implementacion del Metodo PUT para actualizar las ofertas
-router.put(/oferta\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var oficialkes = ['tipo_oferta'];
-  var result = _.difference(oficialkes, keys);
-  if (result.length > 0){
-    res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
-    });
-    return;
-  }
-  var oferta = {
-    tipo_oferta: req.body.tipo_oferta
-  };
-  Oferta.findOneAndUpdate({_id: id}, oferta, (err, params) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Error mo se pudo actualizar los datos"
-      });
-      return;
-    }
-    res.status(200).json(params);
-    return;
-  });
-});
 /* GET home page. */
 router.get('/', function(req, res) {
   res.render('index', { title: 'Express' })
