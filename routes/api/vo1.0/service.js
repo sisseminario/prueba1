@@ -1,6 +1,7 @@
 var express = require('express');
 var multer = require('multer');
 var router = express.Router();
+var fs = require('fs');
 var _ = require("underscore");
 var User = require("../../../database/collection/user");
 var Propiedad = require("../../../database/collection/propiedad");
@@ -14,12 +15,13 @@ var storage = multer.diskStorage({
   filename: function (req, file, cb) {
     console.log("-------------------------");
     console.log(file);
-    cb(null, file.originalname + "-" + Date.now() + ".jpg");
+    cb(null, "IMG_" + Date.now() + ".jpg");
   }
 });
 var upload = multer({
   storage: storage
 }).single("img");;
+///////login del usuario
 /*router.post("/login", (req, res, next) => {
   var agentename = req.body.agentename;
   var password = req.body.password;
@@ -31,7 +33,6 @@ var upload = multer({
       return;
     }
     if (doc) {
-      //res.status(200).json(doc);
       jwt.sign({nombre_agente: doc.nombre_agente, password_agente: doc.password_agente}, "secretkey123", (err, token) => {
         console.log(err);
         res.status(200).json({
@@ -46,34 +47,7 @@ var upload = multer({
   });
 });
 
-/////////////creacion de una nueva ruta/ de tipo post///Login PARA EL ADMONISTRADOR ///////////
-router.post("/login1", (req, res, next) => {
-  var adminname = req.body.adminname;
-  var password = req.body.password;
-  var result = Administrador.findOne({nombre: adminname, password: password}).exec((err, doc) => {
-    if (err) {
-      res.status(200).json({
-        msn : "No se puede completar con la peticion"
-      });
-      return;
-    }
-    if (doc) {
-      //res.status(200).json(doc);
-      jwt.sign({nombre: doc.nombre, password: doc.password}, "secretkey123", (err, token) => {
-        console.log(err);
-        res.status(200).json({
-         token : token
-        });
-      })
-    } else {
-      res.status(200).json({
-        msn : "El administrador no existe no existe en la base de satos"
-      });
-    }
-  });
-});
-
-//Middleware
+//////Middleware
 function verifytoken (req, res, next) {
   //recuperacion del header
   const header = req.headers["authorization"];
@@ -86,29 +60,70 @@ function verifytoken (req, res, next) {
     next();
   }
 }*/
-//////crear userimg
-router.post("/userimg", (req, res) => {
+//////crear propiedadimg
+router.post(/propiedadimg\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
   upload(req, res, (err) => {
     if (err) {
       res.status(500).json({
-        "msn" : "No se ha podido subir la imagen"
+        "msn" : "No se pudo subir la imagen"
       });
     } else {
       var ruta = req.file.path.substr(6, req.file.path.length);
       console.log(ruta);
       var img = {
+        idpropiedad: id,
         name : req.file.originalname,
         physicalpath: req.file.path,
         relativepath: "http://localhost:7777" + ruta
       };
       var imgData = new Img(img);
-      imgData.save().then( () => {
+      imgData.save().then( (infoimg) => {
         //content-type
-        res.status(200).json(
-          req.file
-        );
+        var propiedad = {
+          gallery: new Array()
+        }
+        Propiedad.findOne({_id: id}).exec( (err, docs) => {
+          var data = docs.gallery;
+          var aux = new Array();
+          if (data.length == 1 && data[0] == "") {
+            propiedad.gallery.push("/api/v1.0/propiedadimg/" + infoimg._id)
+          } else {
+            aux.push("/api/v1.0/propiedadimg/" + infoimg._id);
+            data = data.concat(aux);
+            propiedad.gallery = data;
+          }
+          Propiedad.findOneAndUpdate({_id : id}, propiedad, (err, params) => {
+            if (err) {
+              res.status(500).json({
+                "msn" : "error en la actualizacion del usuario"
+              });
+              return;
+            }
+            res.status(200).json( req.file);
+            return;
+          });
+        });
       });
     }
+  });
+});
+///mostrar imagen
+router.get(/propiedadimg\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  console.log(id)
+  Img.findOne({_id : id}).exec((err, docs) => {
+    if (err) {
+      res.status(500).json({
+        "msn" : "Ocurrio algun error en el servicio"
+      });
+      return;
+    }
+    var img = fs.readFileSync("./" + docs.physicalpath);
+    res.contentType('image/jpeg');
+    res.status(200).send(img);
   });
 });
 
@@ -227,7 +242,7 @@ router.post("/propiedad", (req, res) => {
 
   if (req.body.estado == "" && req.body.precio == "") {
     res.status(400).json({
-      "msn" : "formato incorrecto de llenado"
+      "msn" : "formato de llenado incorrecto"
     });
     return;
   }
@@ -242,7 +257,7 @@ router.post("/propiedad", (req, res) => {
     deshabitacion: req.body.deshabitacion,
     descripcion_banio: req.body.descripcion_banio,
     numero_banios: req.body.numero_banios,
-    numero_habitacines: req.body.numero_habitacines,
+    numero_habitaciones: req.body.numero_habitaciones,
     supconstruida: req.body.supconstruida,
     supterraza: req.body.supterraza,
     pisos: req.body.pisos,
@@ -264,6 +279,7 @@ router.post("/propiedad", (req, res) => {
     nombre_ciudad: req.body.nombre_ciudad,
     latitud: req.body.latitud,
     longitud: req.body.longitud,
+    gallery: "",
     nombre_dueno: req.body.nombre_dueno,
     apellido_dueno: req.body.apellido_dueno,
     telefono_dueno: req.body.telefono_dueno,
@@ -275,9 +291,10 @@ router.post("/propiedad", (req, res) => {
 
   };
   var propiedadData =new Propiedad(propiedad);
-  propiedadData.save().then( () => {
+  propiedadData.save().then( (rr) => {
     //content-type
     res.status(200).json({
+      "id" : rr_id,
       "msn" : "propiedad  Registrado con exito "
     });
   });
@@ -288,15 +305,6 @@ router.get("/propiedad", (req, res, next) => {
     res.status(200).json(docs);
   })
 });
-/*
-router.get("/propiedad", (req, res, next) => {
-  Propiedad.find({}).exec( (error, propiedades) => {
-    Dueno.populate(propiedades, {path: "Dueno"},function(err, propiedades){
-        res.status(200).send(propiedades);
-      });
-  })
-});
-*/
 //leer uno por uno las propiedades
 router.get(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
@@ -373,7 +381,7 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
     deshabitacion: req.body.deshabitacion,
     descripcion_banio: req.body.descripcion_banio,
     numero_banios: req.body.numero_banios,
-    numero_habitacines: req.body.numero_habitacines,
+    numero_habitaciones: req.body.numero_habitaciones,
     supconstruida: req.body.supconstruida,
     supterraza: req.body.supterraza,
     pisos: req.body.pisos,
@@ -395,6 +403,7 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
     nombre_ciudad: req.body.nombre_ciudad,
     latitud: req.body.latitud,
     longitud: req.body.longitud,
+    gallery: "",
     nombre_dueno: req.body.nombre_dueno,
     apellido_dueno: req.body.apellido_dueno,
     telefono_dueno: req.body.telefono_dueno,
