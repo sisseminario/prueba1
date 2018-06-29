@@ -67,7 +67,7 @@ router.post(/propiedadimg\/[a-z0-9]{1,}$/, (req, res) => {
   upload(req, res, (err) => {
     if (err) {
       res.status(500).json({
-        "msn" : "No se pudo subir la imagen"
+        "msn" : err
       });
     } else {
       var ruta = req.file.path.substr(6, req.file.path.length);
@@ -235,7 +235,28 @@ router.put(/user\/[a-z0-9]{1,}$/, (req, res) => {
     return;
   });
 });
-
+/////////////// Mapa Latitud y Longitud//////////////////////7
+router.post("/sendcoloords", function(req, res){
+    var cadena = req.body;
+    console.log(cadena);
+    var exp = /[{]{1,1}[0-9.,-]{1,}[}]{1,1}/g
+    var r = cadena.match(exp);
+    for (var i = 0 ; i < r.length ; i++){
+      var n = r[i].match(exp2);
+      propiedad.push("/api/v1.0/sendcoloords/" + {lat: n[0], lng: n[1]});
+    }
+    console.log(propiedad);
+    for(var i =0 ; i<propiedad.length; i++){
+      query.save("propiedad",data,function(r){
+      });
+    }
+    res.send({result:true});
+});
+router.get("/getCoors", function(req, res){
+  query.get("propiedad").execute(function(result){
+    req.send(result);
+  });
+});
 //////////////////////////propiedad/////////////////////////////////
 //insertar
 router.post("/propiedad", (req, res) => {
@@ -247,33 +268,36 @@ router.post("/propiedad", (req, res) => {
     return;
   }
   var propiedad = {
+    vender_alqui_anticre: req.body.vender_alqui_anticre,
     estado: req.body.estado,
     descripcion: req.body.descripcion,
-    fecha_entrega: req.body.fecha_entrega,
+  //fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
     amurallado: req.body.amurallado,
     servicios_basicos: req.body.servicios_basicos,
-    anio_construccion: req.body.anio_construccion,
-    deshabitacion: req.body.deshabitacion,
-    descripcion_banio: req.body.descripcion_banio,
+    otros: req.body.otros,
+    //anio_construccion: req.body.anio_construccion,
+    //deshabitacion: req.body.deshabitacion,
+    //descripcion_banio: req.body.descripcion_banio,
     numero_banios: req.body.numero_banios,
     numero_habitaciones: req.body.numero_habitaciones,
-    supconstruida: req.body.supconstruida,
-    supterraza: req.body.supterraza,
+    nuemro_cocinas: req.body.numero_cocinas,
+    //supconstruida: req.body.supconstruida,
+    //supterraza: req.body.supterraza,
     pisos: req.body.pisos,
     elevador: req.body.elevador,
-    baulera: req.body.baulera,
+    //baulera: req.body.baulera,
     piscina: req.body.piscina,
     garaje: req.body.garaje,
-    numparqueos: req.body.numparqueos,
+    //numparqueos: req.body.numparqueos,
     amoblado:req.body.amoblado,
-    fecha_publicacion: req.body.fecha_publicacion,
+    //fecha_publicacion: req.body.fecha_publicacion,
     direccion: req.body.direccion,
     ubicacion:req.body.ubicacion,
-    rating: req.body.rating,
+    //rating: req.body.rating,
     precio: req.body.precio,
     moneda: req.body.moneda,
-    tipo_oferta: req.body.tipo_oferta,
+    //tipo_oferta: req.body.tipo_oferta,
     tipo_vivienda: req.body.tipo_vivienda,
     nombre_zona: req.body.nombre_zona,
     nombre_ciudad: req.body.nombre_ciudad,
@@ -283,12 +307,9 @@ router.post("/propiedad", (req, res) => {
     nombre_dueno: req.body.nombre_dueno,
     apellido_dueno: req.body.apellido_dueno,
     telefono_dueno: req.body.telefono_dueno,
-    telefono_ref_dueno: req.body.telefono_ref_dueno,
+    //telefono_ref_dueno: req.body.telefono_ref_dueno,
     celular_dueno: req.body.celular_dueno,
-    email_dueno: req.body.email_dueno,
-    ciudad_dueno: req.body.ciudad_dueno
-
-
+    email_dueno: req.body.email_dueno
   };
   var propiedadData =new Propiedad(propiedad);
   propiedadData.save().then( (rr) => {
@@ -298,12 +319,28 @@ router.post("/propiedad", (req, res) => {
       "msn" : "propiedad  Registrado con exito "
     });
   });
+/*  router.post('/?search=keyword', function(req, res, next) {
+    var informacion =
+    var wordkey = req.body.wordkey;
+    var expreg = new RegExp(wordkey);
+    var result = informacion.filter((key) => {
+        if (key.search(expreg) > -1) {
+          return true;
+        }
+        return false;
+    });
+    res.send(
+      {
+        "wordkey" : wordkey,
+        "result" : result
+      });
+  });*/
 });
 //leer propiedad
 router.get("/propiedad", (req, res, next) => {
   Propiedad.find({}).exec( (error, docs) => {
     res.status(200).json(docs);
-  })
+  });
 });
 //leer uno por uno las propiedades
 router.get(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
@@ -357,12 +394,11 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
   var keys = Object.keys(req.body);
-  var oficialkes = ['estado', 'descripcion', 'fecha_entrega', 'supterreno', 'amurallado',
-   'servicios_basicos', 'anio_construccion', 'deshabitacion', 'descripcion_banio', 'numero_banios',
-   'numero_habitacines', 'supconstruida', 'supterraza', 'pisos', 'elevador', 'baulera', 'piscina',
-    'garaje', 'numparqueos', 'amoblado', 'fecha_publicacion', 'direccion', 'ubicacion', 'rating',
-  'precio', 'moneda', 'tipo_oferta', 'tipo_vivienda', 'nombre_zona', 'nombre_ciudad', 'latitud', 'longitud',
-'nombre_dueno', 'apellido_dueno', 'telefono_dueno', 'telefono_ref_dueno', 'celular_dueno', 'email_dueno', 'ciudad_dueno'];
+  var oficialkes = ['vender_alqui_anticre', 'estado', 'descripcion', 'supterreno', 'amurallado',
+   'servicios_basicos', 'otros', 'numero_banios','numero_habitacines', 'nuemro_cocinas','pisos', 'elevador', 'piscina',
+    'garaje', 'amoblado', 'direccion', 'ubicacion', 'precio', 'moneda', 'tipo_vivienda',
+    'nombre_zona', 'nombre_ciudad', 'latitud', 'longitud',
+'nombre_dueno', 'apellido_dueno', 'telefono_dueno', 'celular_dueno', 'email_dueno'];
   var result = _.difference(oficialkes, keys);
   if (result.length > 0){
     res.status(400).json({
@@ -371,33 +407,36 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
     return;
   }
   var propiedad = {
+    vender_alqui_anticre: req.body.vender_alqui_anticre,
     estado: req.body.estado,
     descripcion: req.body.descripcion,
-    fecha_entrega: req.body.fecha_entrega,
+    //fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
     amurallado: req.body.amurallado,
     servicios_basicos: req.body.servicios_basicos,
-    anio_construccion: req.body.anio_construccion,
-    deshabitacion: req.body.deshabitacion,
-    descripcion_banio: req.body.descripcion_banio,
+    otros: req.body.otros,
+    //anio_construccion: req.body.anio_construccion,
+    //deshabitacion: req.body.deshabitacion,
+    //descripcion_banio: req.body.descripcion_banio,
     numero_banios: req.body.numero_banios,
     numero_habitaciones: req.body.numero_habitaciones,
-    supconstruida: req.body.supconstruida,
-    supterraza: req.body.supterraza,
+    numero_cocinas: req.body.numero_cocinas,
+    //supconstruida: req.body.supconstruida,
+    //supterraza: req.body.supterraza,
     pisos: req.body.pisos,
     elevador: req.body.elevador,
-    baulera: req.body.baulera,
+    //baulera: req.body.baulera,
     piscina: req.body.piscina,
     garaje: req.body.garaje,
-    numparqueos: req.body.numparqueos,
+    //numparqueos: req.body.numparqueos,
     amoblado:req.body.amoblado,
-    fecha_publicacion: req.body.fecha_publicacion,
+    //fecha_publicacion: req.body.fecha_publicacion,
     direccion: req.body.direccion,
     ubicacion:req.body.ubicacion,
-    rating: req.body.rating,
+    //rating: req.body.rating,
     precio: req.body.precio,
     moneda: req.body.moneda,
-    tipo_oferta: req.body.tipo_oferta,
+    //tipo_oferta: req.body.tipo_oferta,
     tipo_vivienda: req.body.tipo_vivienda,
     nombre_zona: req.body.nombre_zona,
     nombre_ciudad: req.body.nombre_ciudad,
@@ -407,10 +446,10 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
     nombre_dueno: req.body.nombre_dueno,
     apellido_dueno: req.body.apellido_dueno,
     telefono_dueno: req.body.telefono_dueno,
-    telefono_ref_dueno: req.body.telefono_ref_dueno,
+    //telefono_ref_dueno: req.body.telefono_ref_dueno,
     celular_dueno: req.body.celular_dueno,
-    email_dueno: req.body.email_dueno,
-    ciudad_dueno: req.body.ciudad_dueno
+    email_dueno: req.body.email_dueno
+    //ciudad_dueno: req.body.ciudad_dueno
   };
   Propiedad.findOneAndUpdate({_id: id}, propiedad, (err, params) => {
     if (err) {
