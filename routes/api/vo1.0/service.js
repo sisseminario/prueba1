@@ -241,9 +241,10 @@ router.post("/sendcoloords", function(req, res){
     console.log(cadena);
     var exp = /[{]{1,1}[0-9.,-]{1,}[}]{1,1}/g
     var r = cadena.match(exp);
+    var propiedad = new Array();
     for (var i = 0 ; i < r.length ; i++){
       var n = r[i].match(exp2);
-      propiedad.push("/api/v1.0/sendcoloords/" + {lat: n[0], lng: n[1]});
+      propiedad.push("/api/vo1.0/sendcoloords/" + {lat: n[0], lng: n[1]});
     }
     console.log(propiedad);
     for(var i =0 ; i<propiedad.length; i++){
