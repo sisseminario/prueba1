@@ -261,7 +261,7 @@ router.get("/getCoors", function(req, res){
 //insertar
 router.post("/propiedad", (req, res) => {
 
-  if (req.body.estado == "" && req.body.precio == "") {
+  if (req.body.nombre_dueno == "" && req.body.apellido_dueno == "") {
     res.status(400).json({
       "msn" : "formato de llenado incorrecto"
     });
@@ -319,24 +319,30 @@ router.post("/propiedad", (req, res) => {
       "msn" : "propiedad  Registrado con exito "
     });
   });
-/*  router.post('/?search=keyword', function(req, res, next) {
-    var informacion =
-    var wordkey = req.body.wordkey;
-    var expreg = new RegExp(wordkey);
-    var result = informacion.filter((key) => {
-        if (key.search(expreg) > -1) {
-          return true;
-        }
-        return false;
+/*
+  /////palabra wordkey
+  var informacion = Propiedad.find({precio : {$ne: null}, nombre_ciudad: {$ne: null}, nombre_dueno: {$ne: null}}).exec( (error, docs) => {
+    res.status(200).json({
+       docs
     });
-    res.send(
-      {
-        "wordkey" : wordkey,
-        "result" : result
-      });
-  });*/
+  });
+  var wordkey = req.body.wordkey;
+  var expreg = new RegExp(wordkey);
+  var result = informacion.filter((key) => {
+      if (key.search(expreg) > -1) {
+        return true;
+      }
+      return false;
+  });
+  res.send(
+    {
+      "wordkey" : wordkey,
+      "result" : result
+    });
+    */
 });
-//leer propiedad
+
+  //leer propiedad
 router.get("/propiedad", (req, res, next) => {
   Propiedad.find({}).exec( (error, docs) => {
     res.status(200).json(docs);
@@ -461,6 +467,40 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
     res.status(200).json(params);
     return;
   });
+});
+
+///////////////////////////////Filtro para el precio///////////////////
+router.get("/propiedadfiltro", (req, res, next) => {
+
+  var params = req.query;
+  var precio = params.precio;
+  console.log(precio);
+  var over = params.over;
+  console.log(over);
+  if(precio == undefined && over == undefined){
+    Propiedad.find({lat: {$ne: null}, lon: {$ne: null}}).exec( (error, docs) => {
+      res.status(200).json({
+        info: docs
+      });
+    })
+    return;
+  }
+  if(over == "equals"){
+   console.log("---------->")
+   Propiedad.find({precio : precio, nombre_ciudad: {$ne: null}, nombre_dueno: {$ne: null}}).exec( (error, docs) => {
+     res.status(200).json({
+        docs
+     });
+   });
+   return;
+ }
+ else if (over == "true"){
+   Propiedad.find({precio: {$gt:precio}, nombre_ciudad: {$ne: null}, nombre_dueno: {$ne: null}}).exec( (error, docs) => {
+     res.status(200).json({
+       info: docs
+     });
+   })
+ }
 });
 
 /* GET home page. */
