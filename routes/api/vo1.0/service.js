@@ -7,6 +7,7 @@ var User = require("../../../database/collection/user");
 var Propiedad = require("../../../database/collection/propiedad");
 
 var Img = require("../../../database/collection/img");
+var Vecindario = require("../../../database/collection/vecindario");
 
 var jwt = require("jsonwebtoken");
 
@@ -60,6 +61,55 @@ function verifytoken (req, res, next) {
     next();
   }
 }*/
+router.post("/vecindario", (req, res) => {
+  var vecindario = {
+    departamento :  req.body.departamento,
+    nombre :  req.body.nombre,
+    zoom  :  req.body.zoom,
+    lat : req.body.lat,
+    lng : req.body.lng,
+    coordenadas : req.body.coordenadas,
+  };
+  var vecindarioData = new Vecindario(vecindario);
+  vecindarioData.save().then( (doc) => {
+    console.log('post req');
+    res.status(200).json({
+      "msn" : "vecindario Registrado con exito ",
+      "doc" : doc._id
+    });
+  }).catch(err => {
+    //console.log(err);
+    res.status(500).json({
+      error : err
+    });
+  });
+});
+router.get("/vecindario", (req, res, next) => {
+  Vecindario.find({}).exec( (error, docs) => {
+    if (error) {
+      res.status(500).json({error : error});
+      return;
+    }
+    res.status(200).json(docs);
+  })
+
+});
+router.get(/vecindario\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Vecindario.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
+    }
+
+    res.status(200).json({
+      "msn" : "No existe el vecindario"
+    });
+  })
+});
+
+
 //////crear propiedadimg
 router.post(/propiedadimg\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
@@ -144,9 +194,10 @@ router.post("/user", (req, res) => {
   };
   var userData = new User(user);
 
-  userData.save().then( () => {
+  userData.save().then( (rr) => {
     //content-type
     res.status(200).json({
+      "id" : rr._id,
       "msn" : "usuario Registrado con exito "
     });
   });
@@ -237,7 +288,7 @@ router.put(/user\/[a-z0-9]{1,}$/, (req, res) => {
 });
 /////////////// Mapa Latitud y Longitud//////////////////////7
 router.post("/sendcoloords", function(req, res){
-    var cadena = req.body;
+    var cadena = req.body.coor;
     console.log(cadena);
     var exp = /[{]{1,1}[0-9.,-]{1,}[}]{1,1}/g
     var r = cadena.match(exp);
@@ -269,55 +320,42 @@ router.post("/propiedad", (req, res) => {
     return;
   }
   var propiedad = {
-    vender_alqui_anticre: req.body.vender_alqui_anticre,
     estado: req.body.estado,
     descripcion: req.body.descripcion,
-  //fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
     amurallado: req.body.amurallado,
     servicios_basicos: req.body.servicios_basicos,
     otros: req.body.otros,
-    //anio_construccion: req.body.anio_construccion,
-    //deshabitacion: req.body.deshabitacion,
-    //descripcion_banio: req.body.descripcion_banio,
     numero_banios: req.body.numero_banios,
     numero_habitaciones: req.body.numero_habitaciones,
     nuemro_cocinas: req.body.numero_cocinas,
-    //supconstruida: req.body.supconstruida,
-    //supterraza: req.body.supterraza,
     pisos: req.body.pisos,
     elevador: req.body.elevador,
-    //baulera: req.body.baulera,
     piscina: req.body.piscina,
     garaje: req.body.garaje,
-    //numparqueos: req.body.numparqueos,
     amoblado:req.body.amoblado,
-    //fecha_publicacion: req.body.fecha_publicacion,
     direccion: req.body.direccion,
-    ubicacion:req.body.ubicacion,
-    //rating: req.body.rating,
     precio: req.body.precio,
     moneda: req.body.moneda,
-    //tipo_oferta: req.body.tipo_oferta,
     tipo_vivienda: req.body.tipo_vivienda,
     nombre_zona: req.body.nombre_zona,
     nombre_ciudad: req.body.nombre_ciudad,
-    latitud: req.body.latitud,
-    longitud: req.body.longitud,
+    lat: req.body.latitud,
+    lng: req.body.longitud,
     gallery: "",
     nombre_dueno: req.body.nombre_dueno,
     apellido_dueno: req.body.apellido_dueno,
     telefono_dueno: req.body.telefono_dueno,
-    //telefono_ref_dueno: req.body.telefono_ref_dueno,
     celular_dueno: req.body.celular_dueno,
     email_dueno: req.body.email_dueno
   };
-  var propiedadData =new Propiedad(propiedad);
+  var propiedadData = new Propiedad(propiedad);
+
   propiedadData.save().then( (rr) => {
     //content-type
     res.status(200).json({
-      "id" : rr_id,
-      "msn" : "propiedad  Registrado con exito "
+      "id" : rr._id,
+      "msn" : "Propiedad Registrado con exito "
     });
   });
 /*
@@ -346,8 +384,12 @@ router.post("/propiedad", (req, res) => {
   //leer propiedad
 router.get("/propiedad", (req, res, next) => {
   Propiedad.find({}).exec( (error, docs) => {
-    res.status(200).json(docs);
-  });
+      res.status(200).json(
+        {
+          info: docs
+        }
+      );
+    })
 });
 //leer uno por uno las propiedades
 router.get(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
@@ -401,9 +443,9 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
   var keys = Object.keys(req.body);
-  var oficialkes = ['vender_alqui_anticre', 'estado', 'descripcion', 'supterreno', 'amurallado',
+  var oficialkes = [ 'estado', 'descripcion', 'supterreno', 'amurallado',
    'servicios_basicos', 'otros', 'numero_banios','numero_habitacines', 'nuemro_cocinas','pisos', 'elevador', 'piscina',
-    'garaje', 'amoblado', 'direccion', 'ubicacion', 'precio', 'moneda', 'tipo_vivienda',
+    'garaje', 'amoblado', 'direccion', 'precio', 'moneda', 'tipo_vivienda',
     'nombre_zona', 'nombre_ciudad', 'latitud', 'longitud',
 'nombre_dueno', 'apellido_dueno', 'telefono_dueno', 'celular_dueno', 'email_dueno'];
   var result = _.difference(oficialkes, keys);
@@ -414,49 +456,34 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
     return;
   }
   var propiedad = {
-    vender_alqui_anticre: req.body.vender_alqui_anticre,
     estado: req.body.estado,
     descripcion: req.body.descripcion,
-    //fecha_entrega: req.body.fecha_entrega,
     supterreno: req.body.supterreno,
     amurallado: req.body.amurallado,
     servicios_basicos: req.body.servicios_basicos,
     otros: req.body.otros,
-    //anio_construccion: req.body.anio_construccion,
-    //deshabitacion: req.body.deshabitacion,
-    //descripcion_banio: req.body.descripcion_banio,
     numero_banios: req.body.numero_banios,
     numero_habitaciones: req.body.numero_habitaciones,
     numero_cocinas: req.body.numero_cocinas,
-    //supconstruida: req.body.supconstruida,
-    //supterraza: req.body.supterraza,
     pisos: req.body.pisos,
     elevador: req.body.elevador,
-    //baulera: req.body.baulera,
     piscina: req.body.piscina,
     garaje: req.body.garaje,
-    //numparqueos: req.body.numparqueos,
     amoblado:req.body.amoblado,
-    //fecha_publicacion: req.body.fecha_publicacion,
     direccion: req.body.direccion,
-    ubicacion:req.body.ubicacion,
-    //rating: req.body.rating,
     precio: req.body.precio,
     moneda: req.body.moneda,
-    //tipo_oferta: req.body.tipo_oferta,
     tipo_vivienda: req.body.tipo_vivienda,
     nombre_zona: req.body.nombre_zona,
     nombre_ciudad: req.body.nombre_ciudad,
-    latitud: req.body.latitud,
-    longitud: req.body.longitud,
+    lat: req.body.latitud,
+    lng: req.body.longitud,
     gallery: "",
     nombre_dueno: req.body.nombre_dueno,
     apellido_dueno: req.body.apellido_dueno,
     telefono_dueno: req.body.telefono_dueno,
-    //telefono_ref_dueno: req.body.telefono_ref_dueno,
     celular_dueno: req.body.celular_dueno,
     email_dueno: req.body.email_dueno
-    //ciudad_dueno: req.body.ciudad_dueno
   };
   Propiedad.findOneAndUpdate({_id: id}, propiedad, (err, params) => {
     if (err) {
@@ -503,6 +530,47 @@ router.get("/propiedadfiltro", (req, res, next) => {
    })
  }
 });
+/////////////filtro por precio() corto )//////
+router.get('/fil_precio', (req, res, next) =>{
+  var params = req.query;
+  var preciomax = params.preciomax;
+  var preciomin = params.preciomin ;
+  console.log("msn"+preciomax);
+  console.log("msnmin"+preciomin);
+  Propiedad.find( {$and: [ {precio : {$lt : preciomax}} , {precio : {$gt : preciomin}} ] }  ).exec((err, docs) => {
+    if(docs){
+          res.status(200).json({
+            info: docs
+          });
+    }
+    else{
+      res.status(201).json({
+        "msn" : "no existe Propiedades con ese precio "
+      })
+    }
+  })
+});
+///////////filtro para el tipo de vivienda
+router.get('/fil_tipo_vivienda', (req ,res,next) =>{
+  var params = req.query;
+  var tipo_vivienda = params.tipo_vivienda;
+  var estado = params.estado;
+  console.log("tipo_vivienda"+tipo_vivienda);
+
+  Propiedad.find( {$and: [ {tipo_vivienda : tipo_vivienda},{estado : estado} ] } ).exec((err, docs) => {
+    if(docs){
+          res.status(200).json({
+            info: docs
+          });
+    }
+    else{
+      res.status(201).json({
+        "msn" : "no existe Propiedades con ese precio "
+      })
+    }
+  })
+});
+
 
 /* GET home page. */
 router.get('/', function(req, res) {

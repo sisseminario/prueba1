@@ -2,36 +2,23 @@ const mongoose = require("../connect");
 var mon = require('mongoose');
 var Schema = mon.Schema;
 var propiedadSchema = new Schema ({
-  vender_alqui_anticre: String,
   estado: String,
   descripcion: String,
-  //fecha_entrega: { type: Date, default: Date.now },
   supterreno: Number,
   amurallado: String,
   servicios_basicos: String,
   otros: String,
-  //anio_construccion: Date,
-  //deshabitacion: String,
-  //descripcion_banio: String,
   numero_banios: Number,
   nuemro_cocinas: Number,
   numero_habitaciones: Number,
-  //supconstruida: Number,
-  //supterraza: Number,
   pisos: Number,
   elevador: String,
-  //baulera: Boolean,
   piscina: String,
   garaje: String,
-  //numparqueos: Number,
   amoblado: String,
-  //fecha_publicacion: Date,
-  ubicacion: String,
   direccion: String,
-  //rating: Number,
   precio: String,
   moneda: String,
-  //tipo_oferta: String,
   tipo_vivienda: String,
   nombre_zona: String,
   nombre_ciudad: String,
@@ -41,10 +28,8 @@ var propiedadSchema = new Schema ({
   nombre_dueno: String,
   apellido_dueno: String,
   telefono_dueno: Number,
-  //telefono_ref_dueno: Number,
   celular_dueno: Number,
   email_dueno: String
-  //ciudad_dueno: String
 });
 var propiedad= mongoose.model("propiedad",propiedadSchema );
 module.exports = propiedad;
