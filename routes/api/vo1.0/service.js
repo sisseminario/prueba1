@@ -117,7 +117,7 @@ router.post(/propiedadimg\/[a-z0-9]{1,}$/, (req, res) => {
   upload(req, res, (err) => {
     if (err) {
       res.status(500).json({
-        "msn" : err
+        "msn" : "No se ha podido subir la imagen"
       });
     } else {
       var ruta = req.file.path.substr(6, req.file.path.length);
@@ -130,29 +130,30 @@ router.post(/propiedadimg\/[a-z0-9]{1,}$/, (req, res) => {
       };
       var imgData = new Img(img);
       imgData.save().then( (infoimg) => {
-        //content-type
         var propiedad = {
           gallery: new Array()
         }
-        Propiedad.findOne({_id: id}).exec( (err, docs) => {
+        Propiedad.findOne({_id:id}).exec( (err, docs) =>{
           var data = docs.gallery;
-          var aux = new Array();
+          var aux = new  Array();
           if (data.length == 1 && data[0] == "") {
-            propiedad.gallery.push("/api/v1.0/propiedadimg/" + infoimg._id)
+            propiedad.gallery.push("/api/vo1.0/propiedadimg/" + infoimg._id)
           } else {
-            aux.push("/api/v1.0/propiedadimg/" + infoimg._id);
+            aux.push("/api/vo1.0/propiedadimg/" + infoimg._id);
             data = data.concat(aux);
             propiedad.gallery = data;
           }
           Propiedad.findOneAndUpdate({_id : id}, propiedad, (err, params) => {
-            if (err) {
-              res.status(500).json({
-                "msn" : "error en la actualizacion del usuario"
-              });
+              if (err) {
+                res.status(500).json({
+                  "msn" : "error en la actualizacion del propiedad"
+                });
+                return;
+              }
+              res.status(200).json(
+                req.file
+              );
               return;
-            }
-            res.status(200).json( req.file);
-            return;
           });
         });
       });
@@ -164,19 +165,31 @@ router.get(/propiedadimg\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
   console.log(id)
-  Img.findOne({_id : id}).exec((err, docs) => {
+  Img.findOne({_id: id}).exec((err, docs) => {
     if (err) {
       res.status(500).json({
-        "msn" : "Ocurrio algun error en el servicio"
+        "msn": "Sucedio algun error en el servicio"
       });
       return;
     }
-    var img = fs.readFileSync("./" + docs.physicalpath);
-    res.contentType('image/jpeg');
-    res.status(200).send(img);
+    else{
+      if(docs){
+        //regresamos la imagen deseada
+        var img = fs.readFileSync("./" + docs.physicalpath);
+        //var img = fs.readFileSync("./public/avatars/img.jpg");
+        res.contentType('image/jpg');
+        res.status(200).send(img);
+        //regresamos la imagen deseada
+      }
+      else{
+        res.status(424).json({
+          "msn": "La solicitud falló, ,la imagen fue eliminada"
+        });
+        return;
+      }
+    }
   });
 });
-
 ////crear usuario
 router.post("/user", (req, res) => {
 
@@ -313,7 +326,7 @@ router.get("/getCoors", function(req, res){
 //insertar
 router.post("/propiedad", (req, res) => {
 
-  if (req.body.nombre_dueno == "" && req.body.apellido_dueno == "") {
+  if (req.body.nombre_dueno == "" && req.body.email_dueno == "") {
     res.status(400).json({
       "msn" : "formato de llenado incorrecto"
     });
@@ -340,8 +353,8 @@ router.post("/propiedad", (req, res) => {
     tipo_vivienda: req.body.tipo_vivienda,
     nombre_zona: req.body.nombre_zona,
     nombre_ciudad: req.body.nombre_ciudad,
-    lat: req.body.latitud,
-    lng: req.body.longitud,
+    lat: req.body.lat,
+    lng: req.body.lng,
     gallery: "",
     nombre_dueno: req.body.nombre_dueno,
     apellido_dueno: req.body.apellido_dueno,
@@ -391,6 +404,16 @@ router.get("/propiedad", (req, res, next) => {
       );
     })
 });
+/*router.get("/propiedad", (req, res, next) => {
+  Propiedad.find({}).exec( (error, docs) => {
+    if (error) {
+      res.status(500).json({error : error});
+      return;
+    }
+    res.status(200).json(docs);
+  })
+
+});*/
 //leer uno por uno las propiedades
 router.get(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
@@ -446,12 +469,12 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
   var oficialkes = [ 'estado', 'descripcion', 'supterreno', 'amurallado',
    'servicios_basicos', 'otros', 'numero_banios','numero_habitacines', 'nuemro_cocinas','pisos', 'elevador', 'piscina',
     'garaje', 'amoblado', 'direccion', 'precio', 'moneda', 'tipo_vivienda',
-    'nombre_zona', 'nombre_ciudad', 'latitud', 'longitud',
+    'nombre_zona', 'nombre_ciudad', 'lat', 'lng',
 'nombre_dueno', 'apellido_dueno', 'telefono_dueno', 'celular_dueno', 'email_dueno'];
   var result = _.difference(oficialkes, keys);
   if (result.length > 0){
     res.status(400).json({
-      "msn" : "Existe un error en el formato de envio puede hhaces uso del metodo patch si desea editar solo un fragmento de la informacion"
+      "msn" : "Existe un error en el formato de envio puede haces uso del metodo patch si desea editar solo un fragmento de la informacion"
     });
     return;
   }
@@ -476,8 +499,8 @@ router.put(/propiedad\/[a-z0-9]{1,}$/, (req, res) => {
     tipo_vivienda: req.body.tipo_vivienda,
     nombre_zona: req.body.nombre_zona,
     nombre_ciudad: req.body.nombre_ciudad,
-    lat: req.body.latitud,
-    lng: req.body.longitud,
+    lat: req.body.lat,
+    lng: req.body.lng,
     gallery: "",
     nombre_dueno: req.body.nombre_dueno,
     apellido_dueno: req.body.apellido_dueno,
